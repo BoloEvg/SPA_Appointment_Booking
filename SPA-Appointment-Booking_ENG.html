@@ -1,0 +1,1324 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>SPA Appointment Booking</title>
+  <style>
+    :root {
+      --bg-1: #0f172a;
+      --bg-2: #1e293b;
+      --card: rgba(255, 255, 255, 0.1);
+      --text-main: #f8fafc;
+      --text-muted: #cbd5e1;
+      --accent: #38bdf8;
+      --border: rgba(255, 255, 255, 0.18);
+    }
+
+    * {
+      box-sizing: border-box;
+    }
+
+    body {
+      margin: 0;
+      min-height: 100vh;
+      font-family: "Segoe UI", Arial, sans-serif;
+      color: var(--text-main);
+      background:
+        radial-gradient(circle at 10% 20%, rgba(29, 78, 216, 0.75) 0%, transparent 32%),
+        radial-gradient(circle at 90% 80%, #1d4ed8 0%, transparent 30%),
+        linear-gradient(135deg, var(--bg-1), var(--bg-2));
+      display: grid;
+      place-items: center;
+      padding: 24px;
+    }
+
+    .container {
+      width: min(960px, 100%);
+    }
+
+    .admin-code-trigger {
+      position: absolute;
+      top: 10px;
+      right: 10px;
+      z-index: 1100;
+      padding: 6px 9px;
+      border: 1px solid rgba(56, 189, 248, 0.45);
+      border-radius: 8px;
+      background: rgba(15, 23, 42, 0.76);
+      color: #f8fafc;
+      font-size: 0.8rem;
+      font-weight: 600;
+      cursor: pointer;
+      backdrop-filter: blur(4px);
+    }
+
+    .new-client-corner-button {
+      position: absolute;
+      top: 10px;
+      left: 10px;
+      z-index: 1100;
+      width: 30px;
+      height: 30px;
+      padding: 0;
+      border: 1px solid rgba(56, 189, 248, 0.45);
+      border-radius: 50%;
+      background: rgba(15, 23, 42, 0.76);
+      color: #f8fafc;
+      font-size: 0.95rem;
+      font-weight: 700;
+      line-height: 1;
+      cursor: pointer;
+      backdrop-filter: blur(4px);
+      display: grid;
+      place-items: center;
+    }
+
+    .admin-code-overlay {
+      position: fixed;
+      inset: 0;
+      display: none;
+      align-items: center;
+      justify-content: center;
+      background: rgba(2, 6, 23, 0.62);
+      z-index: 1200;
+    }
+
+    .admin-code-overlay.is-visible {
+      display: flex;
+    }
+
+    .admin-code-modal {
+      width: min(430px, calc(100% - 36px));
+      padding: 20px;
+      border-radius: 16px;
+      border: 1px solid var(--border);
+      background: linear-gradient(165deg, rgba(15, 23, 42, 0.96), rgba(30, 41, 59, 0.94));
+      box-shadow: 0 20px 42px rgba(15, 23, 42, 0.45);
+      display: grid;
+      gap: 10px;
+    }
+
+    .admin-code-title {
+      margin: 0;
+      font-size: 1.1rem;
+      color: #f8fafc;
+    }
+
+    .admin-code-help {
+      margin: 0;
+      color: #cbd5e1;
+      font-size: 0.92rem;
+    }
+
+    .admin-code-actions {
+      margin-top: 4px;
+      display: flex;
+      gap: 10px;
+      justify-content: center;
+    }
+
+    .admin-code-apply,
+    .admin-code-close {
+      padding: 9px 12px;
+      border-radius: 9px;
+      font-size: 0.9rem;
+      font-weight: 600;
+      cursor: pointer;
+    }
+
+    .admin-code-apply {
+      border: none;
+      background: linear-gradient(135deg, #38bdf8, #2563eb);
+      color: #f8fafc;
+    }
+
+    .admin-code-close {
+      border: 1px solid rgba(148, 163, 184, 0.45);
+      background: rgba(15, 23, 42, 0.65);
+      color: #e2e8f0;
+    }
+
+    .admin-code-status {
+      margin: 0;
+      color: #93c5fd;
+      font-size: 0.86rem;
+    }
+
+    .admin-code-status:empty {
+      display: none;
+    }
+
+    .admin-code-status.error {
+      color: #fca5a5;
+    }
+
+    .is-hidden {
+      display: none !important;
+    }
+
+    .admin-code-input-row {
+      display: grid;
+      gap: 6px;
+    }
+
+    .admin-code-input-row.is-hidden {
+      display: none;
+    }
+
+    .admin-code-help.is-hidden {
+      display: none;
+    }
+
+    .admin-panel {
+      display: none;
+      gap: 12px;
+      margin-top: 6px;
+      padding-top: 8px;
+      border-top: 1px solid rgba(148, 163, 184, 0.25);
+    }
+
+    .admin-panel.is-visible {
+      display: grid;
+    }
+
+    .admin-panel-section {
+      display: grid;
+      gap: 8px;
+      padding: 10px;
+      border-radius: 10px;
+      border: 1px solid rgba(148, 163, 184, 0.25);
+      background: rgba(15, 23, 42, 0.45);
+    }
+
+    .admin-panel-label {
+      margin: 0;
+      color: #f8fafc;
+      font-size: 0.92rem;
+      font-weight: 600;
+    }
+
+    .admin-range-row {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+    }
+
+    .admin-range-row input[type="range"] {
+      flex: 1;
+      padding: 0;
+      height: 8px;
+      accent-color: #38bdf8;
+    }
+
+    .admin-range-value {
+      min-width: 66px;
+      text-align: right;
+      color: #93c5fd;
+      font-size: 0.9rem;
+      font-weight: 700;
+    }
+
+    .admin-quick-buttons {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 8px;
+    }
+
+    .admin-quick-button {
+      padding: 6px 10px;
+      border: 1px solid rgba(56, 189, 248, 0.35);
+      border-radius: 8px;
+      background: rgba(30, 41, 59, 0.8);
+      color: #e2e8f0;
+      font-size: 0.84rem;
+      font-weight: 600;
+      cursor: pointer;
+    }
+
+    .title {
+      margin: 0 0 10px;
+      font-size: clamp(1.9rem, 3.2vw, 2.8rem);
+      text-align: center;
+      letter-spacing: 0.5px;
+    }
+
+    .subtitle {
+      margin: 0 0 32px;
+      text-align: center;
+      color: var(--text-muted);
+      font-size: 1rem;
+    }
+
+    .card {
+      background: var(--card);
+      border: 1px solid var(--border);
+      border-radius: 18px;
+      padding: 22px;
+      backdrop-filter: blur(6px);
+      box-shadow: 0 10px 24px rgba(15, 23, 42, 0.12);
+    }
+
+    .card h2 {
+      margin: 0 0 16px;
+      font-size: 1.45rem;
+      color: #f8fafc;
+      text-shadow: 0 2px 10px rgba(15, 23, 42, 0.45);
+    }
+
+    .calculator {
+      display: grid;
+      gap: 14px;
+    }
+
+    .field {
+      display: grid;
+      gap: 8px;
+    }
+
+    .booking-options {
+      display: grid;
+      gap: 10px;
+    }
+
+    .booking-choice {
+      display: flex;
+      gap: 18px;
+      flex-wrap: wrap;
+      padding: 12px;
+      border-radius: 10px;
+      border: 1px solid var(--border);
+      background: rgba(15, 23, 42, 0.45);
+    }
+
+    .booking-choice label {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      cursor: pointer;
+      color: var(--text-main);
+    }
+
+    .booking-choice input[type="radio"] {
+      width: auto;
+      accent-color: var(--accent);
+    }
+
+    .booking-datetime {
+      display: none;
+    }
+
+    .booking-datetime.is-visible {
+      display: grid;
+    }
+
+    .approx-label {
+      display: inline-flex;
+      align-items: center;
+      gap: 8px;
+      color: var(--text-main);
+      cursor: pointer;
+    }
+
+    .approx-label input[type="checkbox"] {
+      width: auto;
+      accent-color: var(--accent);
+    }
+
+    .optional-service {
+      display: grid;
+      gap: 14px;
+      padding: 12px;
+      border-radius: 12px;
+      border: 1px solid var(--border);
+      background: rgba(15, 23, 42, 0.35);
+    }
+
+    #additionalServices:empty {
+      display: none;
+    }
+
+    .service-card {
+      display: grid;
+      gap: 12px;
+      padding: 10px;
+      border-radius: 10px;
+      border: 1px solid rgba(255, 255, 255, 0.1);
+      background: rgba(15, 23, 42, 0.3);
+    }
+
+    .service-card-header {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 10px;
+    }
+
+    .remove-service-button {
+      padding: 6px 10px;
+      border: 1px solid rgba(248, 113, 113, 0.45);
+      border-radius: 8px;
+      background: rgba(239, 68, 68, 0.14);
+      color: #fecaca;
+      font-size: 0.95rem;
+      font-weight: 700;
+      cursor: pointer;
+      line-height: 1;
+    }
+
+    .add-service-button {
+      justify-self: start;
+      padding: 10px 14px;
+      border: none;
+      border-radius: 10px;
+      background: linear-gradient(135deg, #0ea5e9, #2563eb);
+      color: #f8fafc;
+      font-weight: 600;
+      cursor: pointer;
+    }
+
+    label {
+      color: var(--text-muted);
+      font-size: 0.95rem;
+    }
+
+    select,
+    input {
+      width: 100%;
+      padding: 10px 12px;
+      border-radius: 10px;
+      border: 1px solid var(--border);
+      background: rgba(15, 23, 42, 0.65);
+      color: var(--text-main);
+      font-size: 1rem;
+      outline: none;
+    }
+
+    select:focus,
+    input:focus {
+      border-color: var(--accent);
+      box-shadow: 0 0 0 3px rgba(56, 189, 248, 0.18);
+    }
+
+    .result {
+      margin-top: 8px;
+      padding: 14px;
+      border-radius: 12px;
+      border: 1px solid rgba(56, 189, 248, 0.22);
+      background: rgba(15, 23, 42, 0.55);
+      font-size: 1.06rem;
+      line-height: 1.4;
+    }
+
+    .result-amount {
+      font-weight: 700;
+      color: var(--accent);
+    }
+
+    .old-price {
+      color: #fca5a5;
+      text-decoration: line-through;
+      text-decoration-color: #ef4444;
+      text-decoration-thickness: 2px;
+      margin-right: 8px;
+      opacity: 0.9;
+    }
+
+    .new-price {
+      color: #86efac;
+      font-weight: 800;
+    }
+
+    .pay-button {
+      width: 100%;
+      margin-top: 18px;
+      padding: 14px 18px;
+      border: none;
+      border-radius: 12px;
+      background: linear-gradient(135deg, #38bdf8, #2563eb);
+      color: #f8fafc;
+      font-size: 1rem;
+      font-weight: 700;
+      cursor: pointer;
+      box-shadow: 0 12px 24px rgba(37, 99, 235, 0.3);
+      transition: transform 0.2s ease, box-shadow 0.2s ease;
+    }
+
+    .pay-button:hover {
+      transform: translateY(-2px);
+      box-shadow: 0 16px 28px rgba(37, 99, 235, 0.35);
+    }
+
+    .pay-summary {
+      display: none;
+      margin-top: 22px;
+      padding: 18px;
+      border-radius: 14px;
+      border: 1px solid rgba(56, 189, 248, 0.24);
+      background: rgba(15, 23, 42, 0.62);
+    }
+
+    .pay-summary.is-visible {
+      display: grid;
+      gap: 12px;
+    }
+
+    .summary-title {
+      margin: 0;
+      color: #f8fafc;
+      font-size: 1.2rem;
+    }
+
+    .summary-line {
+      margin: 0;
+      color: var(--text-muted);
+      font-size: 0.98rem;
+    }
+
+    .summary-line strong {
+      color: var(--text-main);
+    }
+
+    .summary-success {
+      justify-self: center;
+      margin: 10px 0 0;
+      padding: 12px;
+      min-width: 220px;
+      border-radius: 10px;
+      border: none;
+      background: rgba(34, 197, 94, 0.14);
+      background: linear-gradient(135deg, #38bdf8, #2563eb);
+      color: #dcfce7;
+      font-weight: 600;
+      font-size: 1rem;
+      cursor: pointer;
+    }
+
+    .payment-status {
+      display: none;
+      justify-self: center;
+      align-items: center;
+      justify-items: center;
+      gap: 10px;
+      margin-top: 8px;
+      color: #dcfce7;
+      font-weight: 600;
+      text-align: center;
+    }
+
+    .payment-status.is-visible {
+      display: grid;
+    }
+
+    .payment-status-main {
+      display: inline-flex;
+      align-items: center;
+      gap: 10px;
+    }
+
+    .payment-status-note {
+      margin: 0;
+      color: #cbd5e1;
+      font-size: 0.92rem;
+      font-weight: 500;
+    }
+
+    .success-overlay {
+      position: fixed;
+      inset: 0;
+      display: none;
+      align-items: center;
+      justify-content: center;
+      background: rgba(2, 6, 23, 0.58);
+      backdrop-filter: blur(3px);
+      z-index: 1000;
+    }
+
+    .success-overlay.is-visible {
+      display: flex;
+    }
+
+    .success-modal {
+      width: min(340px, calc(100% - 36px));
+      padding: 26px 22px 20px;
+      border-radius: 20px;
+      border: 1px solid rgba(255, 255, 255, 0.22);
+      background: linear-gradient(165deg, rgba(15, 23, 42, 0.96), rgba(30, 41, 59, 0.94));
+      box-shadow: 0 24px 50px rgba(15, 23, 42, 0.45);
+      text-align: center;
+      animation: successModalIn 0.45s ease-out;
+    }
+
+    .success-ring {
+      width: 96px;
+      height: 96px;
+      margin: 0 auto 14px;
+      border-radius: 999px;
+      display: grid;
+      place-items: center;
+      background:
+        radial-gradient(circle at 30% 30%, rgba(16, 185, 129, 0.38), rgba(16, 185, 129, 0.08) 60%, transparent 75%),
+        rgba(16, 185, 129, 0.14);
+      border: 1px solid rgba(16, 185, 129, 0.4);
+      box-shadow: 0 0 0 0 rgba(16, 185, 129, 0.45);
+      animation: successPulse 1.6s ease-out infinite;
+    }
+
+    .success-check {
+      color: #86efac;
+      font-size: 2.15rem;
+      line-height: 1;
+      transform: scale(0.45);
+      opacity: 0;
+      animation: checkPop 0.5s 0.12s ease-out forwards;
+    }
+
+    .success-title {
+      margin: 0;
+      font-size: 1.5rem;
+      letter-spacing: 2.4px;
+      color: #dcfce7;
+      text-transform: uppercase;
+    }
+
+    .success-subtitle {
+      margin: 8px 0 0;
+      color: #cbd5e1;
+      font-size: 0.95rem;
+    }
+
+    .success-details {
+      margin-top: 12px;
+      padding: 10px;
+      border-radius: 10px;
+      border: 1px solid rgba(148, 163, 184, 0.28);
+      background: rgba(15, 23, 42, 0.5);
+      text-align: left;
+    }
+
+    .success-line {
+      margin: 0 0 6px;
+      color: #cbd5e1;
+      font-size: 0.92rem;
+    }
+
+    .success-line:last-child {
+      margin-bottom: 0;
+    }
+
+    .success-line strong {
+      color: #f8fafc;
+    }
+
+    .success-close {
+      margin-top: 16px;
+      padding: 10px 18px;
+      border: 1px solid rgba(148, 163, 184, 0.45);
+      border-radius: 10px;
+      background: rgba(15, 23, 42, 0.65);
+      color: #e2e8f0;
+      font-size: 0.95rem;
+      font-weight: 600;
+      cursor: pointer;
+    }
+
+    .success-close:hover {
+      border-color: rgba(56, 189, 248, 0.55);
+      color: #f8fafc;
+    }
+
+    @keyframes successModalIn {
+      from {
+        transform: translateY(12px) scale(0.94);
+        opacity: 0;
+      }
+      to {
+        transform: translateY(0) scale(1);
+        opacity: 1;
+      }
+    }
+
+    @keyframes successPulse {
+      0% {
+        box-shadow: 0 0 0 0 rgba(16, 185, 129, 0.4);
+      }
+      100% {
+        box-shadow: 0 0 0 22px rgba(16, 185, 129, 0);
+      }
+    }
+
+    @keyframes checkPop {
+      from {
+        transform: scale(0.45) rotate(-12deg);
+        opacity: 0;
+      }
+      to {
+        transform: scale(1) rotate(0deg);
+        opacity: 1;
+      }
+    }
+
+    .payment-check {
+      width: 28px;
+      height: 28px;
+      border-radius: 999px;
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      background: rgba(34, 197, 94, 0.2);
+      border: 1px solid rgba(34, 197, 94, 0.35);
+      color: #86efac;
+      font-size: 1rem;
+      line-height: 1;
+    }
+
+    .price-list,
+    .time,
+    .price,
+    .note {
+      display: none;
+    }
+
+    .time {
+      color: var(--text-muted);
+      font-size: 0.98rem;
+    }
+
+    .price {
+      font-weight: 700;
+      color: var(--accent);
+      font-size: 1.03rem;
+    }
+
+    .note {
+      margin-top: 10px;
+      font-size: 0.92rem;
+      color: var(--text-muted);
+    }
+
+    @media (min-width: 769px) {
+      .admin-code-trigger,
+      .new-client-corner-button {
+        position: fixed;
+      }
+    }
+
+    @media (max-width: 768px) {
+      .container {
+        margin-top: 8px;
+      }
+    }
+  </style>
+</head>
+<body>
+  <button class="new-client-corner-button" id="newClientButton" type="button" title="New client" aria-label="New client">↻</button>
+  <button class="admin-code-trigger" id="adminCodeTrigger" type="button">Admin panel</button>
+
+  <div class="admin-code-overlay" id="adminCodeOverlay">
+    <div class="admin-code-modal">
+      <h3 class="admin-code-title">Admin panel</h3>
+      <p class="admin-code-help" id="adminCodeHelp">Enter the code to open the Admin panel</p>
+      <div class="admin-code-input-row" id="adminCodeInputRow">
+        <input id="adminCodeInput" type="password" inputmode="numeric" maxlength="6" placeholder="Enter 6 digits">
+      </div>
+      <p class="admin-code-status" id="adminCodeStatus"></p>
+      <div class="admin-panel" id="adminPanel">
+        <div class="admin-panel-section">
+          <p class="admin-panel-label">Discount (percent)</p>
+          <div class="admin-range-row">
+            <input id="percentDiscountRange" type="range" min="0" max="100" step="1" value="0">
+            <span class="admin-range-value" id="percentDiscountValue">0%</span>
+          </div>
+          <div class="admin-quick-buttons">
+            <button class="admin-quick-button" type="button" data-percent="10">10%</button>
+            <button class="admin-quick-button" type="button" data-percent="25">25%</button>
+            <button class="admin-quick-button" type="button" data-percent="50">50%</button>
+            <button class="admin-quick-button" type="button" data-percent="75">75%</button>
+            <button class="admin-quick-button" type="button" data-percent="90">90%</button>
+            <button class="admin-quick-button" type="button" data-percent="100">100%</button>
+          </div>
+        </div>
+        <div class="admin-panel-section">
+          <p class="admin-panel-label">Discount (RUB)</p>
+          <div class="admin-range-row">
+            <input id="rubDiscountRange" type="range" min="0" max="300" step="1" value="0">
+            <span class="admin-range-value" id="rubDiscountValue">0 RUB</span>
+          </div>
+          <div class="admin-quick-buttons">
+            <button class="admin-quick-button" type="button" data-rub="10">10 RUB</button>
+            <button class="admin-quick-button" type="button" data-rub="25">25 RUB</button>
+            <button class="admin-quick-button" type="button" data-rub="50">50 RUB</button>
+            <button class="admin-quick-button" type="button" data-rub="75">75 RUB</button>
+            <button class="admin-quick-button" type="button" data-rub="90">90 RUB</button>
+            <button class="admin-quick-button" type="button" data-rub="100">100 RUB</button>
+          </div>
+        </div>
+      </div>
+      <div class="admin-code-actions">
+        <button class="admin-code-close" id="adminCodeCloseButton" type="button">Close</button>
+        <button class="admin-code-apply is-hidden" id="adminDiscountApplyButton" type="button">Apply</button>
+      </div>
+    </div>
+  </div>
+
+  <main class="container">
+    <h1 class="title">SPA Appointment Booking</h1>
+    <p class="subtitle">Choose a service, select the time, pay, show the receipt to the administrator, and we will begin</p>
+
+    <section class="card">
+      <h2>Service selection</h2>
+      <div class="calculator">
+        <div class="field booking-options">
+          <label>Service</label>
+          <div class="booking-choice">
+            <label for="serviceHaircut">
+              <input id="serviceHaircut" type="radio" name="serviceType" value="Haircut" checked>
+              Haircut
+            </label>
+            <label for="serviceMassage">
+              <input id="serviceMassage" type="radio" name="serviceType" value="Back massage">
+              Back massage
+            </label>
+            <label for="serviceLegMassage">
+              <input id="serviceLegMassage" type="radio" name="serviceType" value="Leg massage">
+              Leg massage
+            </label>
+          </div>
+        </div>
+
+        <div class="field">
+          <label for="minutes">Time (minutes)</label>
+          <input id="minutes" type="number" min="1" step="1" value="10" placeholder="Enter the number of minutes">
+        </div>
+
+        <div class="optional-service" id="secondServiceSection">
+          <div id="additionalServices"></div>
+          <button class="add-service-button" id="addMoreServiceButton" type="button">Add a service</button>
+        </div>
+
+        <div class="field booking-options">
+          <label>Booking</label>
+          <div class="booking-choice">
+            <label for="bookingNow">
+              <input id="bookingNow" type="radio" name="bookingType" value="now" checked>
+              Now
+            </label>
+            <label for="bookingLaterSimple">
+              <input id="bookingLaterSimple" type="radio" name="bookingType" value="laterSimple">
+              Later
+            </label>
+            <label for="bookingLater">
+              <input id="bookingLater" type="radio" name="bookingType" value="later">
+              Date & time
+            </label>
+          </div>
+        </div>
+
+        <div class="field booking-datetime" id="bookingDateField">
+          <label for="bookingDate">Date</label>
+          <input id="bookingDate" type="date" disabled>
+        </div>
+
+        <div class="field booking-datetime" id="bookingTimeField">
+          <label for="bookingTime">Booking time</label>
+          <label for="bookingApprox" class="approx-label">
+            <input id="bookingApprox" type="checkbox" disabled>
+            Approximate
+          </label>
+          <input id="bookingTime" type="time" disabled>
+        </div>
+      </div>
+
+      <div class="result" id="result">
+        <span id="resultText">Back massage for 10 minutes</span> —
+        <span class="result-amount" id="resultPrice">50 RUB</span>
+      </div>
+
+      <button class="pay-button" id="payButton" type="button">Proceed to payment</button>
+
+      <div class="pay-summary" id="paySummary">
+        <h3 class="summary-title">Total</h3>
+        <div id="summaryServicesList"></div>
+        <p class="summary-line"><strong>Booking:</strong> <span id="summaryBooking">Now</span></p>
+        <p class="summary-line"><strong>Amount:</strong> <span id="summaryPrice">50 RUB</span></p>
+        <button class="summary-success" id="confirmPaymentButton" type="button">Pay for service</button>
+        <div class="payment-status" id="paymentStatus">
+          <div class="payment-status-main">
+            <span class="payment-check">✓</span>
+            <span>Payment successful</span>
+          </div>
+          <p class="payment-status-note">Show the receipt and your bank app payment screenshot to the administrator</p>
+        </div>
+      </div>
+    </section>
+  </main>
+
+  <div class="success-overlay" id="successOverlay" role="status" aria-live="polite">
+    <div class="success-modal">
+      <div class="success-ring">
+        <span class="success-check">✓</span>
+      </div>
+      <p class="success-title">SUCCESS</p>
+      <p class="success-subtitle">Show the receipt and your bank app payment screenshot to the administrator</p>
+      <div class="success-details" id="successDetails"></div>
+      <button type="button" class="success-close" id="successCloseButton">Close</button>
+    </div>
+  </div>
+
+  <script>
+    const PRICE_PER_MINUTE = 5;
+    const serviceTypeInputs = document.querySelectorAll('input[name="serviceType"]');
+    const minutesInput = document.getElementById("minutes");
+    const secondServiceSection = document.getElementById("secondServiceSection");
+    const additionalServices = document.getElementById("additionalServices");
+    const addMoreServiceButton = document.getElementById("addMoreServiceButton");
+    const bookingTypeInputs = document.querySelectorAll('input[name="bookingType"]');
+    const bookingDateInput = document.getElementById("bookingDate");
+    const bookingApproxInput = document.getElementById("bookingApprox");
+    const bookingTimeInput = document.getElementById("bookingTime");
+    const bookingDateField = document.getElementById("bookingDateField");
+    const bookingTimeField = document.getElementById("bookingTimeField");
+    const resultText = document.getElementById("resultText");
+    const resultPrice = document.getElementById("resultPrice");
+    const payButton = document.getElementById("payButton");
+    const paySummary = document.getElementById("paySummary");
+    const confirmPaymentButton = document.getElementById("confirmPaymentButton");
+    const newClientButton = document.getElementById("newClientButton");
+    const paymentStatus = document.getElementById("paymentStatus");
+    const successOverlay = document.getElementById("successOverlay");
+    const successDetails = document.getElementById("successDetails");
+    const successCloseButton = document.getElementById("successCloseButton");
+    const adminCodeTrigger = document.getElementById("adminCodeTrigger");
+    const adminCodeOverlay = document.getElementById("adminCodeOverlay");
+    const adminCodeInput = document.getElementById("adminCodeInput");
+    const adminCodeInputRow = document.getElementById("adminCodeInputRow");
+    const adminCodeHelp = document.getElementById("adminCodeHelp");
+    const adminCodeStatus = document.getElementById("adminCodeStatus");
+    const adminCodeCloseButton = document.getElementById("adminCodeCloseButton");
+    const adminDiscountApplyButton = document.getElementById("adminDiscountApplyButton");
+    const adminPanel = document.getElementById("adminPanel");
+    const percentDiscountRange = document.getElementById("percentDiscountRange");
+    const percentDiscountValue = document.getElementById("percentDiscountValue");
+    const rubDiscountRange = document.getElementById("rubDiscountRange");
+    const rubDiscountValue = document.getElementById("rubDiscountValue");
+    const percentQuickButtons = document.querySelectorAll("[data-percent]");
+    const rubQuickButtons = document.querySelectorAll("[data-rub]");
+    const summaryServicesList = document.getElementById("summaryServicesList");
+    const summaryBooking = document.getElementById("summaryBooking");
+    const summaryPrice = document.getElementById("summaryPrice");
+    const ADMIN_CODE = "181207";
+    let extraServiceCount = 0;
+    let activeDiscountPercent = 0;
+    let activeDiscountRub = 0;
+    let isAdminPanelUnlocked = false;
+    let paymentCompleted = false;
+
+    function formatActiveDiscountText() {
+      const parts = [];
+      if (activeDiscountPercent > 0) {
+        parts.push(`${activeDiscountPercent}%`);
+      }
+      if (activeDiscountRub > 0) {
+        parts.push(`${activeDiscountRub} RUB`);
+      }
+      return parts.join(" and ");
+    }
+
+    function getSelectedService() {
+      return document.querySelector('input[name="serviceType"]:checked').value;
+    }
+
+    function getBookingText() {
+      const bookingType = document.querySelector('input[name="bookingType"]:checked').value;
+      const approxText = bookingApproxInput.checked ? "approximately " : "";
+      const hasDate = Boolean(bookingDateInput.value);
+      const hasTime = Boolean(bookingTimeInput.value);
+      const formattedDate = hasDate ? formatBookingDate(bookingDateInput.value) : "";
+
+      if (bookingType === "laterSimple") {
+        return "later";
+      }
+
+      if (bookingType === "later" && hasDate && hasTime) {
+        return `${formattedDate} ${approxText}at ${bookingTimeInput.value}`;
+      }
+
+      if (bookingType === "later" && hasTime) {
+        return `${approxText}at ${bookingTimeInput.value}`;
+      }
+
+      if (bookingType === "later" && hasDate) {
+        return `${formattedDate}`;
+      }
+
+      if (bookingType === "later") {
+        return "at the selected date or time";
+      }
+
+      return "now";
+    }
+
+    function formatBookingDate(dateString) {
+      const parts = dateString.split("-");
+      if (parts.length !== 3) {
+        return dateString;
+      }
+      const [year, month, day] = parts;
+      return `${month}/${day}/${year}`;
+    }
+
+    function getPriceDetails(totalMinutes) {
+      const baseTotal = totalMinutes * PRICE_PER_MINUTE;
+      const percentDiscountValue = Math.round(baseTotal * (activeDiscountPercent / 100));
+      const afterPercent = Math.max(0, baseTotal - percentDiscountValue);
+      const finalTotal = Math.max(0, afterPercent - activeDiscountRub);
+      return { baseTotal, finalTotal };
+    }
+
+    function formatPriceHtml(baseTotal, finalTotal) {
+      if (activeDiscountPercent <= 0 && activeDiscountRub <= 0) {
+        return `${finalTotal} RUB`;
+      }
+      return `<span class="old-price">${baseTotal} RUB</span><span class="new-price">${finalTotal} RUB</span>`;
+    }
+
+    function refreshAllDisplays() {
+      calculatePrice();
+      refreshPaymentSummaryIfVisible();
+    }
+
+    function createAdditionalServiceCard() {
+      extraServiceCount += 1;
+      const serviceIndex = additionalServices.children.length + 2;
+      const groupName = `extraServiceType${extraServiceCount}`;
+      const card = document.createElement("div");
+      card.className = "service-card";
+      card.dataset.serviceIndex = String(serviceIndex);
+      card.innerHTML = `
+        <div class="field booking-options">
+          <div class="service-card-header">
+            <label class="extra-service-title">Service ${serviceIndex}</label>
+            <button type="button" class="remove-service-button" title="Remove service">−</button>
+          </div>
+          <div class="booking-choice">
+            <label>
+              <input type="radio" name="${groupName}" value="Haircut" checked>
+              Haircut
+            </label>
+            <label>
+              <input type="radio" name="${groupName}" value="Leg massage">
+              Leg massage
+            </label>
+            <label>
+              <input type="radio" name="${groupName}" value="Back massage">
+              Back massage
+            </label>
+          </div>
+        </div>
+        <div class="field">
+          <label class="extra-minutes-label">Service ${serviceIndex} time (minutes)</label>
+          <input type="number" min="1" step="1" value="10" class="extra-minutes" placeholder="Enter the number of minutes">
+        </div>
+      `;
+      additionalServices.appendChild(card);
+      card.querySelectorAll(`input[name="${groupName}"]`).forEach((input) => {
+        input.addEventListener("change", calculatePrice);
+      });
+      card.querySelector(".extra-minutes").addEventListener("input", calculatePrice);
+      card.querySelector(".remove-service-button").addEventListener("click", () => {
+        card.remove();
+        renumberAdditionalServices();
+        calculatePrice();
+      });
+      renumberAdditionalServices();
+    }
+
+    function renumberAdditionalServices() {
+      const cards = Array.from(additionalServices.querySelectorAll(".service-card"));
+      cards.forEach((card, index) => {
+        const serviceIndex = index + 2;
+        card.dataset.serviceIndex = String(serviceIndex);
+        const title = card.querySelector(".extra-service-title");
+        const minutesLabel = card.querySelector(".extra-minutes-label");
+        if (title) {
+          title.textContent = `Service ${serviceIndex}`;
+        }
+        if (minutesLabel) {
+          minutesLabel.textContent = `Service ${serviceIndex} time (minutes)`;
+        }
+      });
+    }
+
+    function toggleSecondService() {
+      secondServiceSection.classList.add("is-visible");
+    }
+
+    function getAllSelectedServices() {
+      const services = [];
+      services.push({
+        service: getSelectedService(),
+        minutes: Math.max(1, Number(minutesInput.value) || 0),
+      });
+      minutesInput.value = services[0].minutes;
+
+      const cards = Array.from(additionalServices.querySelectorAll(".service-card"));
+      cards.forEach((card) => {
+        const selected = card.querySelector('input[type="radio"]:checked');
+        const minutesInputEl = card.querySelector(".extra-minutes");
+        const minutes = Math.max(1, Number(minutesInputEl.value) || 0);
+        minutesInputEl.value = minutes;
+        services.push({ service: selected.value, minutes });
+      });
+
+      return services;
+    }
+
+    function toggleBookingFields() {
+      const bookingType = document.querySelector('input[name="bookingType"]:checked').value;
+      const isDatetime = bookingType === "later";
+      bookingDateInput.disabled = !isDatetime;
+      bookingApproxInput.disabled = !isDatetime;
+      bookingTimeInput.disabled = !isDatetime;
+      bookingDateField.classList.toggle("is-visible", isDatetime);
+      bookingTimeField.classList.toggle("is-visible", isDatetime);
+
+      if (!isDatetime) {
+        bookingDateInput.value = "";
+        bookingApproxInput.checked = false;
+        bookingTimeInput.value = "";
+      }
+    }
+
+    function calculatePrice() {
+      const services = getAllSelectedServices();
+      const bookingText = getBookingText();
+      const totalMinutes = services.reduce((sum, item) => sum + item.minutes, 0);
+      const resultDescription = services.map((item) => `${item.service} for ${item.minutes} minutes`).join(" + ");
+      const { baseTotal, finalTotal } = getPriceDetails(totalMinutes);
+      resultText.textContent = `${resultDescription}, booking ${bookingText}`;
+      resultPrice.innerHTML = formatPriceHtml(baseTotal, finalTotal);
+      refreshPaymentSummaryIfVisible();
+    }
+
+    function showPaymentSummary() {
+      const services = getAllSelectedServices();
+      const totalMinutes = services.reduce((sum, item) => sum + item.minutes, 0);
+      summaryServicesList.innerHTML = "";
+      services.forEach((item, index) => {
+        const line = document.createElement("p");
+        line.className = "summary-line";
+        line.innerHTML = `<strong>Service ${index + 1}:</strong> ${item.service}, ${item.minutes} minutes`;
+        summaryServicesList.appendChild(line);
+      });
+
+      const { baseTotal, finalTotal } = getPriceDetails(totalMinutes);
+      summaryBooking.textContent = getBookingText();
+      summaryPrice.innerHTML = formatPriceHtml(baseTotal, finalTotal);
+    }
+
+    function refreshPaymentSummaryIfVisible() {
+      if (paySummary.classList.contains("is-visible")) {
+        showPaymentSummary();
+      }
+    }
+
+    function openPaymentSummary() {
+      showPaymentSummary();
+      confirmPaymentButton.textContent = "Pay for service";
+      paymentStatus.classList.remove("is-visible");
+      paySummary.classList.add("is-visible");
+      paySummary.scrollIntoView({ behavior: "smooth", block: "start" });
+    }
+
+    function confirmPayment() {
+      const services = getAllSelectedServices();
+      const totalMinutes = services.reduce((sum, item) => sum + item.minutes, 0);
+      const { baseTotal, finalTotal } = getPriceDetails(totalMinutes);
+      successDetails.innerHTML = "";
+      services.forEach((item, index) => {
+        const line = document.createElement("p");
+        line.className = "success-line";
+        line.innerHTML = `<strong>Service ${index + 1}:</strong> ${item.service}, ${item.minutes} minutes`;
+        successDetails.appendChild(line);
+      });
+      const bookingLine = document.createElement("p");
+      bookingLine.className = "success-line";
+      bookingLine.innerHTML = `<strong>Booking:</strong> ${getBookingText()}`;
+      successDetails.appendChild(bookingLine);
+      const totalLine = document.createElement("p");
+      totalLine.className = "success-line";
+      totalLine.innerHTML = `<strong>Amount:</strong> ${formatPriceHtml(baseTotal, finalTotal)}`;
+      successDetails.appendChild(totalLine);
+      paymentStatus.classList.add("is-visible");
+      successOverlay.classList.add("is-visible");
+      paymentCompleted = true;
+    }
+
+    function closeSuccessOverlay() {
+      successOverlay.classList.remove("is-visible");
+      if (paymentCompleted) {
+        confirmPaymentButton.textContent = "Show receipt";
+      }
+    }
+
+    function resetForNewClient() {
+      document.getElementById("serviceHaircut").checked = true;
+      minutesInput.value = 10;
+      additionalServices.innerHTML = "";
+      extraServiceCount = 0;
+      document.getElementById("bookingNow").checked = true;
+      bookingDateInput.value = "";
+      bookingApproxInput.checked = false;
+      bookingTimeInput.value = "";
+      toggleBookingFields();
+      paymentStatus.classList.remove("is-visible");
+      paySummary.classList.remove("is-visible");
+      successOverlay.classList.remove("is-visible");
+      paymentCompleted = false;
+      confirmPaymentButton.textContent = "Pay for service";
+      activeDiscountPercent = 0;
+      activeDiscountRub = 0;
+      percentDiscountRange.value = "0";
+      rubDiscountRange.value = "0";
+      updateDiscountControls();
+      calculatePrice();
+      adminCodeStatus.textContent = "";
+      adminCodeStatus.classList.remove("error");
+    }
+
+    function openAdminCodeModal() {
+      const activeDiscountText = formatActiveDiscountText();
+      adminCodeStatus.textContent = activeDiscountText ? `Active discount: ${activeDiscountText}` : "";
+      adminCodeStatus.classList.remove("error");
+      adminCodeInput.value = "";
+      adminCodeOverlay.classList.add("is-visible");
+      if (isAdminPanelUnlocked) {
+        adminPanel.classList.add("is-visible");
+        adminCodeInputRow.classList.add("is-hidden");
+        adminCodeHelp.classList.add("is-hidden");
+        adminDiscountApplyButton.classList.remove("is-hidden");
+      } else {
+        adminPanel.classList.remove("is-visible");
+        adminCodeInputRow.classList.remove("is-hidden");
+        adminCodeHelp.classList.remove("is-hidden");
+        adminDiscountApplyButton.classList.add("is-hidden");
+        adminCodeInput.focus();
+      }
+    }
+
+    function closeAdminCodeModal() {
+      adminCodeOverlay.classList.remove("is-visible");
+      adminPanel.classList.remove("is-visible");
+      adminCodeInputRow.classList.remove("is-hidden");
+      adminCodeHelp.classList.remove("is-hidden");
+      adminDiscountApplyButton.classList.add("is-hidden");
+      adminCodeInput.value = "";
+      adminCodeStatus.textContent = "";
+      adminCodeStatus.classList.remove("error");
+      isAdminPanelUnlocked = false;
+    }
+
+    function applyAdminDiscountChanges() {
+      activeDiscountPercent = Number(percentDiscountRange.value);
+      activeDiscountRub = Number(rubDiscountRange.value);
+      const activeDiscountText = formatActiveDiscountText();
+      adminCodeStatus.textContent = activeDiscountText ? `Discount applied: ${activeDiscountText}` : "";
+      adminCodeStatus.classList.remove("error");
+      refreshAllDisplays();
+      closeAdminCodeModal();
+    }
+
+    function applyAdminCode() {
+      const rawCode = adminCodeInput.value.trim();
+      if (!isAdminPanelUnlocked && rawCode !== ADMIN_CODE) {
+        adminCodeStatus.textContent = "Incorrect code. Please check and try again.";
+        adminCodeStatus.classList.add("error");
+        adminCodeInput.value = "";
+        adminCodeInput.focus();
+        return;
+      }
+      isAdminPanelUnlocked = true;
+      adminPanel.classList.add("is-visible");
+      adminCodeInputRow.classList.add("is-hidden");
+      adminCodeHelp.classList.add("is-hidden");
+      adminDiscountApplyButton.classList.remove("is-hidden");
+      percentDiscountRange.value = String(activeDiscountPercent);
+      rubDiscountRange.value = String(activeDiscountRub);
+      updateDiscountControls();
+      adminCodeStatus.textContent = "";
+      adminCodeStatus.classList.remove("error");
+    }
+
+    function updateDiscountControls() {
+      percentDiscountValue.textContent = `${percentDiscountRange.value}%`;
+      rubDiscountValue.textContent = `${rubDiscountRange.value} RUB`;
+    }
+
+    bookingTypeInputs.forEach((input) => {
+      input.addEventListener("change", () => {
+        toggleBookingFields();
+        calculatePrice();
+      });
+    });
+    serviceTypeInputs.forEach((input) => {
+      input.addEventListener("change", calculatePrice);
+    });
+    minutesInput.addEventListener("input", calculatePrice);
+    addMoreServiceButton.addEventListener("click", () => {
+      createAdditionalServiceCard();
+      if (additionalServices.children.length === 1) {
+        addMoreServiceButton.textContent = "Add a service";
+      }
+      calculatePrice();
+    });
+    bookingDateInput.addEventListener("input", calculatePrice);
+    bookingApproxInput.addEventListener("change", calculatePrice);
+    bookingTimeInput.addEventListener("input", calculatePrice);
+    payButton.addEventListener("click", openPaymentSummary);
+    confirmPaymentButton.addEventListener("click", confirmPayment);
+    newClientButton.addEventListener("click", resetForNewClient);
+    successCloseButton.addEventListener("click", closeSuccessOverlay);
+    adminCodeTrigger.addEventListener("click", openAdminCodeModal);
+    adminCodeCloseButton.addEventListener("click", closeAdminCodeModal);
+    adminDiscountApplyButton.addEventListener("click", applyAdminDiscountChanges);
+    adminCodeInput.addEventListener("input", () => {
+      const digits = adminCodeInput.value.replace(/\\D/g, "").slice(0, 6);
+      if (adminCodeInput.value !== digits) {
+        adminCodeInput.value = digits;
+      }
+      adminCodeStatus.textContent = "";
+      adminCodeStatus.classList.remove("error");
+      if (!isAdminPanelUnlocked && digits.length === 6) {
+        applyAdminCode();
+      }
+    });
+    adminCodeInput.addEventListener("keydown", (event) => {
+      if (event.key === "Enter") {
+        applyAdminCode();
+      }
+    });
+    percentDiscountRange.addEventListener("input", () => {
+      updateDiscountControls();
+    });
+    rubDiscountRange.addEventListener("input", () => {
+      updateDiscountControls();
+    });
+    percentQuickButtons.forEach((button) => {
+      button.addEventListener("click", () => {
+        percentDiscountRange.value = button.dataset.percent;
+        updateDiscountControls();
+      });
+    });
+    rubQuickButtons.forEach((button) => {
+      button.addEventListener("click", () => {
+        rubDiscountRange.value = button.dataset.rub;
+        updateDiscountControls();
+      });
+    });
+    toggleBookingFields();
+    toggleSecondService();
+    updateDiscountControls();
+    calculatePrice();
+  </script>
+</body>
+</html>
