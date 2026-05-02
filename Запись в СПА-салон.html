@@ -803,6 +803,10 @@
               <input id="bookingNow" type="radio" name="bookingType" value="now" checked>
               Сейчас
             </label>
+            <label for="bookingLaterSimple">
+              <input id="bookingLaterSimple" type="radio" name="bookingType" value="laterSimple">
+              Позже
+            </label>
             <label for="bookingLater">
               <input id="bookingLater" type="radio" name="bookingType" value="later">
               На дату и время
@@ -930,6 +934,10 @@
       const hasDate = Boolean(bookingDateInput.value);
       const hasTime = Boolean(bookingTimeInput.value);
       const formattedDate = hasDate ? formatBookingDate(bookingDateInput.value) : "";
+
+      if (bookingType === "laterSimple") {
+        return "позже";
+      }
 
       if (bookingType === "later" && hasDate && hasTime) {
         return `${formattedDate} ${approxText}в ${bookingTimeInput.value}`;
@@ -1066,14 +1074,15 @@
     }
 
     function toggleBookingFields() {
-      const isLater = document.querySelector('input[name="bookingType"]:checked').value === "later";
-      bookingDateInput.disabled = !isLater;
-      bookingApproxInput.disabled = !isLater;
-      bookingTimeInput.disabled = !isLater;
-      bookingDateField.classList.toggle("is-visible", isLater);
-      bookingTimeField.classList.toggle("is-visible", isLater);
+      const bookingType = document.querySelector('input[name="bookingType"]:checked').value;
+      const isDatetime = bookingType === "later";
+      bookingDateInput.disabled = !isDatetime;
+      bookingApproxInput.disabled = !isDatetime;
+      bookingTimeInput.disabled = !isDatetime;
+      bookingDateField.classList.toggle("is-visible", isDatetime);
+      bookingTimeField.classList.toggle("is-visible", isDatetime);
 
-      if (!isLater) {
+      if (!isDatetime) {
         bookingDateInput.value = "";
         bookingApproxInput.checked = false;
         bookingTimeInput.value = "";
